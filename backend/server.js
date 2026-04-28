@@ -8,8 +8,15 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://192.168.1.113:3000',
+      'https://music-navy-nine.vercel.app', // Replace with your Vercel URL
+      /vercel\.app$/, // Allow all Vercel domains
+    ],
     methods: ['GET', 'POST'],
+    credentials: true,
   },
 });
 
