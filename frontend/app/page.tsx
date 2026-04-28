@@ -32,7 +32,8 @@ export default function Home() {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/rooms/create', {
+      const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
+      const response = await fetch(`${socketUrl}/api/rooms/create`, {
         method: 'POST',
       });
 
