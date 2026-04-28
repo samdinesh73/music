@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Play, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { PlayCircle, ArrowRight } from 'lucide-react';
 
 interface RoomJoinProps {
   onCreateRoom: () => void;
@@ -22,57 +24,57 @@ export const RoomJoin: React.FC<RoomJoinProps> = ({
     }
   };
 
-  const handleCreateRoom = () => {
-    onCreateRoom();
-  };
-
   if (mode === 'join') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-slate-800 rounded-lg shadow-2xl p-8">
-          <h2 className="text-2xl font-bold text-white mb-6">Join Room</h2>
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white/5 border border-white/10 rounded-2xl shadow-2xl p-8 backdrop-blur-xl">
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-white mb-2">Join Room</h2>
+            <p className="text-white/60">Enter room details to sync with friends</p>
+          </div>
 
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-semibold text-white mb-2">
                 Room ID
               </label>
-              <input
+              <Input
                 type="text"
                 value={roomId}
                 onChange={(e) => setRoomId(e.target.value.toUpperCase())}
                 placeholder="e.g., ABC12DEF"
-                className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/50"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-semibold text-white mb-2">
                 Your Name
               </label>
-              <input
+              <Input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your name"
-                className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/50"
               />
             </div>
 
-            <button
+            <Button
               onClick={handleJoin}
               disabled={isLoading || !roomId.trim() || !username.trim()}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-semibold py-2 rounded-lg transition-colors"
+              className="w-full bg-white text-black hover:bg-white/90 disabled:bg-white/50 font-semibold h-11 rounded-lg"
             >
               {isLoading ? 'Joining...' : 'Join Room'}
-            </button>
+            </Button>
 
-            <button
+            <Button
               onClick={() => setMode('initial')}
-              className="w-full text-gray-300 hover:text-white font-semibold py-2 transition-colors"
+              variant="outline"
+              className="w-full border-white/20 text-white hover:bg-white/10 h-11"
             >
               Back
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -80,44 +82,48 @@ export const RoomJoin: React.FC<RoomJoinProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-12">
-          <div className="flex items-center justify-center mb-4">
-            <Play className="w-12 h-12 text-blue-500 mr-3" />
-            <h1 className="text-4xl font-bold text-white">MusicSync</h1>
+          <div className="flex items-center justify-center mb-6">
+            <div className="bg-white/10 border border-white/20 rounded-full p-3">
+              <PlayCircle className="w-10 h-10 text-white" />
+            </div>
           </div>
-          <p className="text-gray-400 text-lg">Watch videos together in real-time</p>
+          <h1 className="text-5xl font-bold text-white mb-3">MusicSync</h1>
+          <p className="text-white/60 text-lg">Watch videos together in real-time</p>
         </div>
 
-        <div className="bg-slate-800 rounded-lg shadow-2xl p-8 space-y-4">
-          <button
+        <div className="bg-white/5 border border-white/10 rounded-2xl shadow-2xl p-8 space-y-4 backdrop-blur-xl">
+          <Button
             onClick={handleCreateRoom}
             disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center"
+            className="w-full bg-white text-black hover:bg-white/90 disabled:bg-white/50 font-semibold h-12 rounded-lg text-base"
           >
-            <Play className="w-5 h-5 mr-2" />
+            <PlayCircle className="w-5 h-5 mr-2" />
             Create New Room
-          </button>
+          </Button>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-600" />
+              <div className="w-full border-t border-white/10" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-slate-800 text-gray-400">or</span>
+              <span className="px-2 bg-black text-white/60">or</span>
             </div>
           </div>
 
-          <button
+          <Button
             onClick={() => setMode('join')}
-            className="w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 rounded-lg transition-colors"
+            variant="outline"
+            className="w-full border-white/20 text-white hover:bg-white/10 h-12 rounded-lg font-semibold text-base"
           >
             Join Existing Room
-          </button>
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
         </div>
 
-        <p className="text-center text-gray-500 text-sm mt-8">
+        <p className="text-center text-white/40 text-sm mt-8">
           Share the room ID with friends to sync videos together
         </p>
       </div>

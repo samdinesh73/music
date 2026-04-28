@@ -1,6 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { YouTubePlayer } from './YouTubePlayer';
-import { Play, Pause, LogOut, Copy, MessageCircle, Send, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Slider } from '@/components/ui/slider';
+import { Play, Pause, LogOut, Copy, Send, Users, MessageCircle, Crown } from 'lucide-react';
 
 interface User {
   id: string;
@@ -39,7 +46,6 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState('');
   const [copied, setCopied] = useState(false);
-  const [showChat, setShowChat] = useState(true);
 
   // Extract video ID from URL
   const extractVideoId = (url: string): string | null => {
@@ -87,7 +93,6 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
 
   // Handle player state change
   const handlePlayerStateChange = useCallback((state: number) => {
-    // 0 = ENDED, 1 = PLAYING, 2 = PAUSED, etc.
     if (isHost) {
       if (state === 1) {
         socket?.emit('play', { currentTime });
@@ -116,7 +121,6 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
   useEffect(() => {
     if (!socket) return;
 
-    // Sync state
     socket.on('sync-state', (data: any) => {
       setVideoId(data.currentVideoId);
       setCurrentTime(data.currentTime);
@@ -124,46 +128,34 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
       setUsers(data.users);
     });
 
-    // Play event
     socket.on('play', (data: any) => {
       setCurrentTime(data.currentTime);
       setIsPlaying(true);
     });
 
-    // Pause event
     socket.on('pause', (data: any) => {
       setCurrentTime(data.currentTime);
       setIsPlaying(false);
     });
 
-    // Seek event
     socket.on('seek', (data: any) => {
       setCurrentTime(data.currentTime);
     });
 
-    // Video loaded
     socket.on('video-loaded', (data: any) => {
       setVideoId(data.videoId);
       setCurrentTime(data.currentTime);
       setIsPlaying(data.isPlaying);
     });
 
-    // User joined
     socket.on('user-joined', (data: any) => {
       setUsers(data.users);
     });
 
-    // User left
     socket.on('user-left', (data: any) => {
       setUsers(data.users);
     });
 
-    // Host changed
-    socket.on('host-changed', (data: any) => {
-      console.log(`New host: ${data.newHostUsername}`);
-    });
-
-    // Message
     socket.on('message', (data: any) => {
       setMessages((prev) => [...prev, data]);
     });
@@ -176,42 +168,44 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
       socket.off('video-loaded');
       socket.off('user-joined');
       socket.off('user-left');
-      socket.off('host-changed');
       socket.off('message');
     };
   }, [socket]);
 
   return (
-    <div className="min-h-screen bg-slate-900 p-4">
+    <div className="min-h-screen bg-black text-white p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white">MusicSync</h1>
-            <div className="flex items-center gap-2 mt-2">
-              <span className="text-sm text-gray-400">Room: {roomId}</span>
-              <button
+            <h1 className="text-4xl font-bold text-white">MusicSync</h1>
+            <div className="flex items-center gap-3 mt-2">
+              <span className="text-sm text-white/60">Room: </span>
+              <span className="font-mono text-lg font-semibold text-white">{roomId}</span>
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={handleCopyRoomId}
-                className="text-xs bg-slate-700 hover:bg-slate-600 text-gray-300 px-2 py-1 rounded transition-colors"
+                className="border-white/20 text-white hover:bg-white/10 h-8 px-2"
               >
                 {copied ? '✓ Copied' : <Copy className="w-3 h-3" />}
-              </button>
+              </Button>
             </div>
           </div>
-          <button
+          <Button
             onClick={onLeaveRoom}
-            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+            className="bg-red-600 hover:bg-red-700 text-white h-10"
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-4 h-4 mr-2" />
             Leave
-          </button>
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main player */}
+          {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Video player */}
-            <div className="bg-slate-800 rounded-lg p-4">
+            {/* Video Player */}
+            <Card className="bg-black border-white/20 p-0 overflow-hidden">
               <YouTubePlayer
                 videoId={videoId}
                 isPlaying={isPlaying}
@@ -220,155 +214,169 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
                 onStateChange={handlePlayerStateChange}
                 isHost={isHost}
               />
-            </div>
+            </Card>
 
             {/* Controls */}
-            <div className="bg-slate-800 rounded-lg p-4 space-y-4">
+            <Card className="bg-white/5 border-white/20 p-6">
               {isHost ? (
-                <>
+                <div className="space-y-6">
+                  {/* Load Video */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-sm font-semibold text-white mb-3">
                       Load YouTube Video
                     </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
+                    <div className="flex gap-3">
+                      <Input
                         value={youtubeUrl}
                         onChange={(e) => setYoutubeUrl(e.target.value)}
-                        placeholder="Paste YouTube URL here"
+                        placeholder="Paste YouTube URL"
                         onKeyPress={(e) => e.key === 'Enter' && handleLoadVideo()}
-                        className="flex-1 px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                        className="bg-white/10 border-white/20 text-white placeholder:text-white/40"
                       />
-                      <button
+                      <Button
                         onClick={handleLoadVideo}
                         disabled={!youtubeUrl.trim()}
-                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+                        className="bg-white text-black hover:bg-white/90 disabled:bg-white/50 px-6"
                       >
                         Load
-                      </button>
+                      </Button>
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <button
+                  {/* Play/Pause */}
+                  <div>
+                    <Button
                       onClick={isPlaying ? handlePause : handlePlay}
-                      className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-colors"
+                      className="w-full bg-white text-black hover:bg-white/90 h-11 font-semibold text-base"
                     >
                       {isPlaying ? (
                         <>
-                          <Pause className="w-5 h-5" />
+                          <Pause className="w-5 h-5 mr-2" />
                           Pause
                         </>
                       ) : (
                         <>
-                          <Play className="w-5 h-5" />
+                          <Play className="w-5 h-5 mr-2" />
                           Play
                         </>
                       )}
-                    </button>
+                    </Button>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="range"
-                      min="0"
-                      max="1000"
-                      value={Math.min(currentTime * 10, 1000)}
-                      onChange={(e) => handleSeek(e.target.valueAsNumber / 10)}
-                      className="flex-1"
-                    />
-                    <span className="text-sm text-gray-400 w-16">
-                      {Math.floor(currentTime / 60)}:{String(Math.floor(currentTime % 60)).padStart(2, '0')}
-                    </span>
+                  {/* Seek Bar */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-4">
+                      <Slider
+                        value={[currentTime]}
+                        onValueChange={(value) => handleSeek(value[0])}
+                        max={1000}
+                        step={1}
+                        className="flex-1"
+                      />
+                      <span className="text-sm text-white/60 font-mono w-12">
+                        {Math.floor(currentTime / 60)}:{String(Math.floor(currentTime % 60)).padStart(2, '0')}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-center gap-2 bg-blue-600/20 border border-blue-500/50 rounded-lg p-3 text-blue-400 text-sm">
-                    👑 You are the Host
-                  </div>
-                </>
+                  {/* Host Badge */}
+                  <Badge className="bg-white text-black w-fit px-4 py-2">
+                    <Crown className="w-3 h-3 mr-2" />
+                    You are the Host
+                  </Badge>
+                </div>
               ) : (
-                <div className="flex items-center justify-center gap-2 bg-slate-700 rounded-lg p-3 text-gray-400 text-sm">
-                  Waiting for host to control playback...
+                <div className="flex items-center justify-center gap-3 p-6 bg-white/10 border border-white/20 rounded-lg">
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                  <span className="text-white/70 text-sm font-medium">
+                    Waiting for host to control playback...
+                  </span>
                 </div>
               )}
-            </div>
+            </Card>
 
             {/* Status */}
-            <div className="bg-slate-800 rounded-lg p-4">
-              <div className="text-sm text-gray-400">
-                Status: <span className="text-white font-semibold">{isPlaying ? '▶ Playing' : '⏸ Paused'}</span>
+            <Card className="bg-white/5 border-white/20 p-4">
+              <div className="text-sm">
+                <span className="text-white/60">Status: </span>
+                <Badge variant="outline" className="border-white/20 text-white ml-2">
+                  {isPlaying ? '▶ Playing' : '⏸ Paused'}
+                </Badge>
               </div>
-            </div>
+            </Card>
           </div>
 
           {/* Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="space-y-6">
             {/* Users */}
-            <div className="bg-slate-800 rounded-lg p-4">
+            <Card className="bg-white/5 border-white/20 p-6">
               <div className="flex items-center gap-2 mb-4">
-                <Users className="w-5 h-5 text-blue-400" />
-                <h2 className="font-semibold text-white">Users ({users.length})</h2>
+                <Users className="w-5 h-5 text-white" />
+                <h2 className="font-semibold text-white text-lg">Users</h2>
+                <Badge className="bg-white text-black ml-auto">{users.length}</Badge>
               </div>
+              <Separator className="bg-white/10 mb-4" />
               <div className="space-y-2">
                 {users.map((user) => (
                   <div
                     key={user.id}
-                    className="flex items-center gap-2 p-2 bg-slate-700 rounded text-sm text-gray-300"
+                    className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-lg"
                   >
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>{user.username}</span>
-                    {user.isHost && <span className="text-xs bg-blue-600 px-2 py-1 rounded ml-auto">Host</span>}
+                    <span className="text-sm text-white flex-1">{user.username}</span>
+                    {user.isHost && (
+                      <Badge className="bg-white text-black text-xs h-6">
+                        <Crown className="w-3 h-3 mr-1" />
+                        Host
+                      </Badge>
+                    )}
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
 
             {/* Chat */}
-            <div className="bg-slate-800 rounded-lg p-4 flex flex-col h-96">
+            <Card className="bg-white/5 border-white/20 p-6 flex flex-col h-96">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <MessageCircle className="w-5 h-5 text-blue-400" />
-                  <h2 className="font-semibold text-white">Chat</h2>
+                  <MessageCircle className="w-5 h-5 text-white" />
+                  <h2 className="font-semibold text-white text-lg">Chat</h2>
                 </div>
-                <button
-                  onClick={() => setShowChat(!showChat)}
-                  className="text-xs text-gray-400 hover:text-gray-300"
-                >
-                  {showChat ? '−' : '+'}
-                </button>
               </div>
+              <Separator className="bg-white/10 mb-4" />
 
-              {showChat && (
-                <>
-                  <div className="flex-1 overflow-y-auto mb-4 space-y-2 pr-2">
-                    {messages.map((msg) => (
+              <ScrollArea className="flex-1 mb-4 pr-4">
+                <div className="space-y-3">
+                  {messages.length === 0 ? (
+                    <p className="text-center text-white/40 text-sm py-8">No messages yet</p>
+                  ) : (
+                    messages.map((msg) => (
                       <div key={msg.id} className="text-sm">
-                        <span className="text-blue-400 font-medium">{msg.username}</span>
-                        <span className="text-gray-400">: </span>
-                        <span className="text-gray-300">{msg.text}</span>
+                        <span className="text-white font-medium">{msg.username}</span>
+                        <span className="text-white/60">: </span>
+                        <span className="text-white/80">{msg.text}</span>
                       </div>
-                    ))}
-                  </div>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
 
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={messageInput}
-                      onChange={(e) => setMessageInput(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                      placeholder="Type message..."
-                      className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded text-sm text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-                    />
-                    <button
-                      onClick={handleSendMessage}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded transition-colors"
-                    >
-                      <Send className="w-4 h-4" />
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+              <div className="flex gap-2 mt-auto">
+                <Input
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  placeholder="Type message..."
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/40 h-10"
+                />
+                <Button
+                  onClick={handleSendMessage}
+                  className="bg-white text-black hover:bg-white/90 px-4 h-10"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            </Card>
           </div>
         </div>
       </div>
