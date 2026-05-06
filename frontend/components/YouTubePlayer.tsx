@@ -62,7 +62,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
           onStateChange(event.data);
         },
         onError: (event: any) => {
-          console.error('YouTube player error:', event.data);
+          console.error('YouTube player error:', event.data || 'Unknown error');
         },
       },
     });

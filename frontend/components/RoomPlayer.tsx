@@ -173,20 +173,20 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
   }, [socket]);
 
   return (
-    <div className="min-h-screen bg-black text-white p-6">
+    <div className="min-h-screen bg-white text-black p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-white">MusicSync</h1>
+            <h1 className="text-4xl font-bold text-black">MusicSync</h1>
             <div className="flex items-center gap-3 mt-2">
-              <span className="text-sm text-white/60">Room: </span>
-              <span className="font-mono text-lg font-semibold text-white">{roomId}</span>
+              <span className="text-sm text-black/60">Room: </span>
+              <span className="font-mono text-lg font-semibold text-black">{roomId}</span>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={handleCopyRoomId}
-                className="border-white/20 text-white hover:bg-white/10 h-8 px-2"
+                className="border-black/20 text-black hover:bg-black/10 h-8 px-2"
               >
                 {copied ? '✓ Copied' : <Copy className="w-3 h-3" />}
               </Button>
@@ -217,12 +217,12 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
             </Card>
 
             {/* Controls */}
-            <Card className="bg-white/5 border-white/20 p-6">
+            <Card className="bg-black/5 border-black/10 p-6">
               {isHost ? (
                 <div className="space-y-6">
                   {/* Load Video */}
                   <div>
-                    <label className="block text-sm font-semibold text-white mb-3">
+                    <label className="block text-sm font-semibold text-black mb-3">
                       Load YouTube Video
                     </label>
                     <div className="flex gap-3">
@@ -231,12 +231,12 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
                         onChange={(e) => setYoutubeUrl(e.target.value)}
                         placeholder="Paste YouTube URL"
                         onKeyPress={(e) => e.key === 'Enter' && handleLoadVideo()}
-                        className="bg-white/10 border-white/20 text-white placeholder:text-white/40"
+                        className="bg-black/5 border-black/20 text-black placeholder:text-black/40"
                       />
                       <Button
                         onClick={handleLoadVideo}
                         disabled={!youtubeUrl.trim()}
-                        className="bg-white text-black hover:bg-white/90 disabled:bg-white/50 px-6"
+                        className="bg-black text-white hover:bg-black/90 disabled:bg-black/50 px-6"
                       >
                         Load
                       </Button>
@@ -247,7 +247,7 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
                   <div>
                     <Button
                       onClick={isPlaying ? handlePause : handlePlay}
-                      className="w-full bg-white text-black hover:bg-white/90 h-11 font-semibold text-base"
+                      className="w-full bg-black text-white hover:bg-black/90 h-11 font-semibold text-base"
                     >
                       {isPlaying ? (
                         <>
@@ -273,22 +273,22 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
                         step={1}
                         className="flex-1"
                       />
-                      <span className="text-sm text-white/60 font-mono w-12">
+                      <span className="text-sm text-black/60 font-mono w-12">
                         {Math.floor(currentTime / 60)}:{String(Math.floor(currentTime % 60)).padStart(2, '0')}
                       </span>
                     </div>
                   </div>
 
                   {/* Host Badge */}
-                  <Badge className="bg-white text-black w-fit px-4 py-2">
+                  <Badge className="bg-black text-white w-fit px-4 py-2">
                     <Crown className="w-3 h-3 mr-2" />
                     You are the Host
                   </Badge>
                 </div>
               ) : (
-                <div className="flex items-center justify-center gap-3 p-6 bg-white/10 border border-white/20 rounded-lg">
-                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                  <span className="text-white/70 text-sm font-medium">
+                <div className="flex items-center justify-center gap-3 p-6 bg-black/5 border border-black/10 rounded-lg">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-black/70 text-sm font-medium">
                     Waiting for host to control playback...
                   </span>
                 </div>
@@ -296,10 +296,10 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
             </Card>
 
             {/* Status */}
-            <Card className="bg-white/5 border-white/20 p-4">
+            <Card className="bg-black/5 border-black/10 p-4">
               <div className="text-sm">
-                <span className="text-white/60">Status: </span>
-                <Badge variant="outline" className="border-white/20 text-white ml-2">
+                <span className="text-black/60">Status: </span>
+                <Badge variant="outline" className="border-black/20 text-black ml-2">
                   {isPlaying ? '▶ Playing' : '⏸ Paused'}
                 </Badge>
               </div>
@@ -309,23 +309,23 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Users */}
-            <Card className="bg-white/5 border-white/20 p-6">
+            <Card className="bg-black/5 border-black/10 p-6">
               <div className="flex items-center gap-2 mb-4">
-                <Users className="w-5 h-5 text-white" />
-                <h2 className="font-semibold text-white text-lg">Users</h2>
-                <Badge className="bg-white text-black ml-auto">{users.length}</Badge>
+                <Users className="w-5 h-5 text-black" />
+                <h2 className="font-semibold text-black text-lg">Users</h2>
+                <Badge className="bg-black text-white ml-auto">{users.length}</Badge>
               </div>
-              <Separator className="bg-white/10 mb-4" />
+              <Separator className="bg-black/10 mb-4" />
               <div className="space-y-2">
                 {users.map((user) => (
                   <div
                     key={user.id}
-                    className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-lg"
+                    className="flex items-center gap-3 p-3 bg-black/5 border border-black/10 rounded-lg"
                   >
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-white flex-1">{user.username}</span>
+                    <span className="text-sm text-black flex-1">{user.username}</span>
                     {user.isHost && (
-                      <Badge className="bg-white text-black text-xs h-6">
+                      <Badge className="bg-black text-white text-xs h-6">
                         <Crown className="w-3 h-3 mr-1" />
                         Host
                       </Badge>
@@ -336,25 +336,25 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
             </Card>
 
             {/* Chat */}
-            <Card className="bg-white/5 border-white/20 p-6 flex flex-col h-96">
+            <Card className="bg-black/5 border-black/10 p-6 flex flex-col h-96">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <MessageCircle className="w-5 h-5 text-white" />
-                  <h2 className="font-semibold text-white text-lg">Chat</h2>
+                  <MessageCircle className="w-5 h-5 text-black" />
+                  <h2 className="font-semibold text-black text-lg">Chat</h2>
                 </div>
               </div>
-              <Separator className="bg-white/10 mb-4" />
+              <Separator className="bg-black/10 mb-4" />
 
               <ScrollArea className="flex-1 mb-4 pr-4">
                 <div className="space-y-3">
                   {messages.length === 0 ? (
-                    <p className="text-center text-white/40 text-sm py-8">No messages yet</p>
+                    <p className="text-center text-black/40 text-sm py-8">No messages yet</p>
                   ) : (
                     messages.map((msg) => (
                       <div key={msg.id} className="text-sm">
-                        <span className="text-white font-medium">{msg.username}</span>
-                        <span className="text-white/60">: </span>
-                        <span className="text-white/80">{msg.text}</span>
+                        <span className="text-black font-medium">{msg.username}</span>
+                        <span className="text-black/60">: </span>
+                        <span className="text-black/80">{msg.text}</span>
                       </div>
                     ))
                   )}
@@ -367,11 +367,11 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
                   onChange={(e) => setMessageInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                   placeholder="Type message..."
-                  className="bg-white/10 border-white/20 text-white placeholder:text-white/40 h-10"
+                  className="bg-black/5 border-black/20 text-black placeholder:text-black/40 h-10"
                 />
                 <Button
                   onClick={handleSendMessage}
-                  className="bg-white text-black hover:bg-white/90 px-4 h-10"
+                  className="bg-black text-white hover:bg-black/90 px-4 h-10"
                 >
                   <Send className="w-4 h-4" />
                 </Button>
