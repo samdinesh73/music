@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { YouTubePlayer } from './YouTubePlayer';
+import { AudioPlayer } from './AudioPlayer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -7,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
-import { Play, Pause, LogOut, Copy, Send, Users, MessageCircle, Crown } from 'lucide-react';
+import { Play, Pause, LogOut, Copy, Send, Users, MessageCircle, Crown, Music, FileAudio } from 'lucide-react';
 
 interface User {
   id: string;
@@ -40,8 +41,12 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
 }) => {
   const [videoId, setVideoId] = useState<string | null>(null);
   const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioFileName, setAudioFileName] = useState<string>('');
+  const [mediaType, setMediaType] = useState<'youtube' | 'audio' | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [users, setUsers] = useState<User[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState('');
@@ -66,9 +71,66 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
     const id = extractVideoId(youtubeUrl);
     if (id && isHost && socket?.connected) {
       socket.emit('load-video', { videoId: id });
+      setMediaType('youtube');
       setYoutubeUrl('');
+      setAudioUrl(null);
+      setAudioFileName('');
     }
   }, [youtubeUrl, isHost, socket]);
+
+  // Handle audio file upload
+  const handleAudioUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !isHost) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const audioData = e.target?.result as string;
+      if (!audioData) return;
+
+      try {
+        // Upload audio file to backend
+        const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
+        const response = await fetch(`${socketUrl}/api/audio/upload`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            audioData,
+            fileName: file.name,
+            mimeType: file.type,
+            roomId,
+          }),
+        });
+
+        if (!response.ok) throw new Error('Failed to upload audio');
+
+        const { fileId } = await response.json();
+
+        // Emit only the file reference, not the data
+        socket?.emit('load-audio', {
+          fileId,
+          fileName: file.name,
+        });
+
+        // Set local audio URL to backend endpoint
+        const audioUrl = `${socketUrl}/api/audio/${fileId}`;
+        setAudioUrl(audioUrl);
+        setAudioFileName(file.name);
+        setMediaType('audio');
+        setVideoId(null);
+      } catch (err) {
+        console.error('Audio upload error:', err);
+      }
+    };
+    reader.readAsDataURL(file);
+
+    // Reset input
+    if (event.target) {
+      event.target.value = '';
+    }
+  }, [isHost, socket, roomId]);
 
   // Handle play
   const handlePlay = useCallback(() => {
@@ -146,6 +208,19 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
       setVideoId(data.videoId);
       setCurrentTime(data.currentTime);
       setIsPlaying(data.isPlaying);
+      setMediaType('youtube');
+      setAudioUrl(null);
+    });
+
+    socket.on('audio-loaded', (data: any) => {
+      const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
+      const audioUrl = `${socketUrl}/api/audio/${data.fileId}`;
+      setAudioUrl(audioUrl);
+      setAudioFileName(data.fileName);
+      setCurrentTime(0);
+      setIsPlaying(false);
+      setMediaType('audio');
+      setVideoId(null);
     });
 
     socket.on('user-joined', (data: any) => {
@@ -166,6 +241,7 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
       socket.off('pause');
       socket.off('seek');
       socket.off('video-loaded');
+      socket.off('audio-loaded');
       socket.off('user-joined');
       socket.off('user-left');
       socket.off('message');
@@ -204,17 +280,44 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Video Player */}
-            <Card className="bg-black border-white/20 p-0 overflow-hidden">
-              <YouTubePlayer
-                videoId={videoId}
-                isPlaying={isPlaying}
-                currentTime={currentTime}
-                onTimeUpdate={setCurrentTime}
-                onStateChange={handlePlayerStateChange}
-                isHost={isHost}
-              />
-            </Card>
+            {/* Media Player */}
+            {mediaType === 'youtube' ? (
+              <Card className="bg-black border-white/20 p-0 overflow-hidden">
+                <YouTubePlayer
+                  videoId={videoId}
+                  isPlaying={isPlaying}
+                  currentTime={currentTime}
+                  onTimeUpdate={setCurrentTime}
+                  onStateChange={handlePlayerStateChange}
+                  isHost={isHost}
+                />
+              </Card>
+            ) : mediaType === 'audio' ? (
+              <Card className="bg-black/5 border-black/10 p-0 overflow-hidden">
+                <div className="p-6">
+                  <AudioPlayer
+                    audioUrl={audioUrl}
+                    isPlaying={isPlaying}
+                    currentTime={currentTime}
+                    onTimeUpdate={setCurrentTime}
+                    onStateChange={handlePlayerStateChange}
+                    onDurationChange={setDuration}
+                    isHost={isHost}
+                  />
+                  <div className="mt-4 text-center text-black/70 text-sm">
+                    <FileAudio className="w-4 h-4 inline mr-2" />
+                    {audioFileName}
+                  </div>
+                </div>
+              </Card>
+            ) : (
+              <Card className="bg-black/5 border-black/10 p-12">
+                <div className="text-center">
+                  <Music className="w-16 h-16 text-black/30 mx-auto mb-4" />
+                  <p className="text-black/60">No media loaded. Load a YouTube video or audio file to start.</p>
+                </div>
+              </Card>
+            )}
 
             {/* Controls */}
             <Card className="bg-black/5 border-black/10 p-6">
@@ -242,6 +345,29 @@ export const RoomPlayer: React.FC<RoomPlayerProps> = ({
                       </Button>
                     </div>
                   </div>
+
+                  {/* Load Audio File */}
+                  <div>
+                    <label className="block text-sm font-semibold text-black mb-3">
+                      Upload Local Audio File
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <label className="flex-1 cursor-pointer">
+                        <Input
+                          type="file"
+                          accept="audio/*"
+                          onChange={handleAudioUpload}
+                          className="hidden"
+                        />
+                        <div className="bg-black/5 border border-black/20 rounded-lg p-3 text-center hover:bg-black/10 transition">
+                          <FileAudio className="w-4 h-4 inline mr-2 text-black/60" />
+                          <span className="text-black/60 text-sm">Choose audio file...</span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-black/10" />
 
                   {/* Play/Pause */}
                   <div>

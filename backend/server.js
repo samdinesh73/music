@@ -21,12 +21,63 @@ const io = new Server(httpServer, {
 });
 
 app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb' }));
 
-// Room storage: roomId -> { host, users: [], currentVideoId, currentTime, isPlaying, messages }
+// Audio file storage: fileId -> { data, fileName, mimeType }
+const audioFiles = new Map();
+
+// Room storage: roomId -> { host, users: [], currentVideoId, currentTime, isPlaying, messages, currentAudioFileId, audioFileName }
 const rooms = new Map();
 
 // User storage: socketId -> { roomId, username, isHost }
 const users = new Map();
+
+/**
+ * Upload audio file
+ */
+app.post('/api/audio/upload', (req, res) => {
+  try {
+    const { audioData, fileName, mimeType, roomId } = req.body;
+    if (!audioData || !fileName || !roomId) {
+      return res.status(400).json({ error: 'Missing audio data, fileName, or roomId' });
+    }
+
+    const fileId = uuidv4();
+    audioFiles.set(fileId, {
+      data: audioData,
+      fileName,
+      mimeType,
+      roomId,
+      uploadedAt: Date.now(),
+    });
+
+    res.json({ fileId });
+  } catch (error) {
+    console.error('Error uploading audio:', error);
+    res.status(500).json({ error: 'Failed to upload audio' });
+  }
+});
+
+/**
+ * Serve audio file
+ */
+app.get('/api/audio/:fileId', (req, res) => {
+  try {
+    const { fileId } = req.params;
+    const audioFile = audioFiles.get(fileId);
+    if (!audioFile) {
+      return res.status(404).json({ error: 'Audio file not found' });
+    }
+
+    res.setHeader('Content-Type', audioFile.mimeType || 'audio/mpeg');
+    res.setHeader('Content-Disposition', `inline; filename="${audioFile.fileName}"`);
+    res.send(Buffer.from(audioFile.data, 'base64'));
+  } catch (error) {
+    console.error('Error serving audio:', error);
+    res.status(500).json({ error: 'Failed to serve audio' });
+  }
+});
 
 /**
  * Create a new room
@@ -40,6 +91,8 @@ app.post('/api/rooms/create', (req, res) => {
     currentTime: 0,
     isPlaying: false,
     messages: [],
+    currentAudioFileId: null,
+    audioFileName: '',
   });
   res.json({ roomId });
 });
@@ -105,6 +158,16 @@ io.on('connection', (socket) => {
         isHost: users.get(id)?.isHost || false,
       })),
     });
+
+    // If audio is loaded, send the file reference to the new joiner
+    if (room.currentAudioFileId) {
+      socket.emit('audio-loaded', {
+        fileId: room.currentAudioFileId,
+        fileName: room.audioFileName,
+        currentTime: room.currentTime,
+        isPlaying: room.isPlaying,
+      });
+    }
 
     // Notify others about new user
     io.to(roomId).emit('user-joined', {
@@ -190,9 +253,42 @@ io.on('connection', (socket) => {
     room.currentVideoId = data.videoId;
     room.currentTime = 0;
     room.isPlaying = false;
+    room.currentAudioFileId = null;
+    room.audioFileName = '';
 
     io.to(user.roomId).emit('video-loaded', {
       videoId: data.videoId,
+      currentTime: 0,
+      isPlaying: false,
+      timestamp: Date.now(),
+    });
+  });
+
+  /**
+   * Host loads a new audio file (by file reference)
+   */
+  socket.on('load-audio', (data) => {
+    const user = users.get(socket.id);
+    if (!user) return;
+
+    const room = rooms.get(user.roomId);
+    if (!room || room.host !== socket.id) return;
+
+    const { fileId, fileName } = data;
+    if (!audioFiles.has(fileId)) {
+      socket.emit('error', { message: 'Audio file not found' });
+      return;
+    }
+
+    room.currentAudioFileId = fileId;
+    room.audioFileName = fileName;
+    room.currentVideoId = null;
+    room.currentTime = 0;
+    room.isPlaying = false;
+
+    io.to(user.roomId).emit('audio-loaded', {
+      fileId,
+      fileName,
       currentTime: 0,
       isPlaying: false,
       timestamp: Date.now(),
